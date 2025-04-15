@@ -1,34 +1,23 @@
-name: Minikube CI Test
-
+name: CI
 on:
-  pull_request:
-
+  - pull_request
 jobs:
-  test-on-minikube:
+  job1:
     runs-on: ubuntu-latest
-    name: Build and Deploy to Minikube
+    name: Build example and deploy to minikube
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Start Minikube
-        uses: medyagh/setup-minikube@latest
-
-      - name: Verify cluster
-        run: kubectl get nodes
-
-      - name: Build image using Minikube
-        run: |
-          minikube image build -t local/example:latest .
-
-      - name: Deploy to Minikube
-        run: |
-          kubectl apply -f deploy/k8s.yaml
-          kubectl wait --for=condition=ready pod -l app=example --timeout=120s
-
-      - name: Test service
-        run: |
-          minikube service list
-          URL=$(minikube service example --url)
-          echo "Service URL: $URL"
-          curl $URL || echo "Service test failed"
+    - uses: actions/checkout@v4
+    - name: Start minikube
+      uses: medyagh/setup-minikube@latest
+    - name: Build image
+      run: |
+        minikube image build -t local/simple-html:v1 .
+    - name: Deploy to minikube
+      run: |
+        kubectl apply -f deploy/k8s.yaml
+        kubectl wait --for=condition=ready pod -l app=simple-html
+    - name: Test service URLs
+      run: |
+        minikube service list
+        minikube service simple-html --url
+        curl $(minikube service simple-html --url)
