@@ -1,23 +1,35 @@
 name: CI
+
 on:
-  - pull_request
+  pull_request:
+    branches:
+      - main  # Trigger workflow for pull requests to the main branch
+
 jobs:
-  job1:
+  build:
     runs-on: ubuntu-latest
-    name: Build example and deploy to minikube
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Start minikube
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup Minikube
       uses: medyagh/setup-minikube@latest
-    - name: Build image
-      run: |
-        minikube image build -t local/simple-html:v1 .
-    - name: Deploy to minikube
+      with:
+        minikube-version: 'latest'
+
+    - name: Start Minikube
+      run: minikube start
+
+    - name: Build Docker image using Minikube
+      run: minikube image build -t local/devex:v1 .
+
+    - name: Deploy to Minikube
       run: |
         kubectl apply -f deploy/k8s.yaml
         kubectl wait --for=condition=ready pod -l app=simple-html
-    - name: Test service URLs
+
+    - name: Get Service URL
       run: |
-        minikube service list
+        echo "Access your service at:"
         minikube service simple-html --url
-        curl $(minikube service simple-html --url)
